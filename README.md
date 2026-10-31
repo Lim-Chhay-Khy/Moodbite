@@ -1,4 +1,4 @@
-# MoodBite — Stage 2
+# MoodBite 
 
 A food recommendation web app that answers "What should I eat today?" based
 on your mood, cravings, dietary needs, whether you want to cook or eat out,
