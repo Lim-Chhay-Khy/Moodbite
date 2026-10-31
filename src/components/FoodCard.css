@@ -1,0 +1,41 @@
+/* Shared card look (.card, .card__body, .card__actions) lives in index.css */
+
+.food-card__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.food-card__name {
+  font-size: 1.25rem;
+}
+
+.food-card__price {
+  color: var(--color-secondary-dark);
+  font-weight: 600;
+}
+
+.food-card__description {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.food-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin: 4px 0 0;
+}
+
+.food-card__meta dt {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.food-card__meta dd {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+}

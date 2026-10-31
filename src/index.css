@@ -1,0 +1,188 @@
+/* ===== Design tokens ===== */
+:root {
+  --color-bg: #fff8ee;
+  --color-surface: #ffffff;
+  --color-text: #2b2420;
+  --color-text-muted: #8b8073;
+  --color-primary: #e8552e;      /* tomato — CTAs, selected states */
+  --color-primary-dark: #c43f1c;
+  --color-secondary: #4a7c59;    /* sage — restaurant / positive actions */
+  --color-secondary-dark: #386245;
+  --color-tertiary: #f2b705;     /* saffron — highlights */
+  --color-border: #ece2d2;
+  --color-card-shadow: rgba(43, 36, 32, 0.08);
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --radius-sm: 10px;
+  --radius-md: 18px;
+  --radius-lg: 28px;
+
+  --max-width: 1080px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.1;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.page {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 48px 24px 96px;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.page-header h1 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  margin-bottom: 10px;
+}
+
+.page-header p {
+  color: var(--color-text-muted);
+  font-size: 1.05rem;
+}
+
+.step-label {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--color-secondary-dark);
+  background: #eaf2ec;
+  padding: 5px 14px;
+  border-radius: 999px;
+  margin-bottom: 16px;
+}
+
+.continue-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fade-in {
+    animation: fadeIn 0.4s ease both;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== Stage 2: shared card + grid styles ===== */
+
+/* Every card (food, recipe, restaurant) uses .card so they all have the
+   same look, size, and hover effect. */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 22px;
+  align-items: stretch;
+}
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 10px 30px var(--color-card-shadow);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(43, 36, 32, 0.13);
+}
+
+.card__body {
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1; /* fills the card so buttons line up at the bottom */
+}
+
+.card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto; /* pushes buttons to the bottom of the card */
+  padding-top: 6px;
+}
+
+.card__actions .btn {
+  padding: 10px 16px;
+  font-size: 0.85rem;
+}
+
+.notice {
+  max-width: 640px;
+  margin: -16px auto 28px;
+  text-align: center;
+  font-size: 0.92rem;
+  background: #fdf0cf;
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+}
+
+@media (max-width: 560px) {
+  .page {
+    padding: 32px 16px 72px;
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+}

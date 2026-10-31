@@ -1,0 +1,38 @@
+.home {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.home__hero {
+  max-width: 640px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.home__eyebrow {
+  font-size: 3rem;
+}
+
+.home__heading {
+  font-size: clamp(2.2rem, 6vw, 3.4rem);
+}
+
+.home__subtitle {
+  font-size: 1.15rem;
+  color: var(--color-text-muted);
+  max-width: 440px;
+}
+
+.home__actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}

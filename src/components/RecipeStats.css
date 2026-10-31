@@ -1,0 +1,23 @@
+.recipe-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.recipe-stats__item {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.recipe-stats__item dt {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.recipe-stats__item dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+}

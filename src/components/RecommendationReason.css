@@ -1,0 +1,14 @@
+.recommendation-reason {
+  font-size: 0.88rem;
+  color: var(--color-text);
+  background: #fff3ec;
+  border-left: 3px solid var(--color-primary);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+}
+
+.recommendation-reason__title {
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin-bottom: 2px;
+}

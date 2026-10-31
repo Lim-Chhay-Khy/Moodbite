@@ -1,0 +1,59 @@
+.restaurant-card__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.restaurant-card__name {
+  font-size: 1.2rem;
+}
+
+.restaurant-card__rating {
+  font-weight: 700;
+  color: #a57c00;
+  white-space: nowrap;
+}
+
+.restaurant-card__subtitle {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.restaurant-card__details,
+.restaurant-card__services {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.restaurant-card__details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.restaurant-card__services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.restaurant-card__services li {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.restaurant-card__services .is-available {
+  color: var(--color-secondary-dark);
+  background: #eaf2ec;
+}
+
+.restaurant-card__services .is-unavailable {
+  color: var(--color-text-muted);
+  background: #f3eee6;
+  text-decoration: line-through;
+}
