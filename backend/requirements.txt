@@ -3,3 +3,4 @@ Flask-Cors==6.0.5
 pymongo==4.19.0
 python-dotenv==1.2.3
 certifi
+PyJWT==2.15.0

@@ -29,3 +29,12 @@ class Config:
 
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
     PORT = int(os.getenv("PORT", "5000"))
+
+    # ----- Stage 4: login -----
+    # Flask's own secret key (Flask uses it to sign cookies/sessions).
+    SECRET_KEY = os.getenv("SECRET_KEY", "").strip()
+    # The secret used to sign login tokens (JWTs). Anyone who knows it could
+    # create fake tokens, so it lives only in .env, never in GitHub.
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "").strip()
+    # How long a login lasts before the user must log in again.
+    JWT_EXPIRES_DAYS = int(os.getenv("JWT_EXPIRES_DAYS", "7"))

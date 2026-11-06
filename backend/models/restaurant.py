@@ -26,10 +26,7 @@ restaurants whose food_ids list contains 1:
 
 (In SQL this needed a separate linking table.)
 
-Not used yet: a "favorites" collection, planned for Stage 4 (login), with
-documents like {"user_id": ..., "food_id": 1, "restaurant_id": None,
-"created_at": ...}. MongoDB creates a collection automatically the first
-time something is saved into it.
+Users can save restaurants as favorites; see models/favorite.py.
 """
 
 

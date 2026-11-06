@@ -1,19 +1,30 @@
 import React from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext.jsx'
 import './Navbar.css'
 
 // `matches` lists the paths that should highlight each link, so
 // "Discover" stays highlighted on every page of the question flow.
-// Login comes back in Stage 4.
-const LINKS = [
-  { label: 'Home', to: '/', matches: ['/'] },
-  {
-    label: 'Discover',
-    to: '/mood',
-    matches: ['/mood', '/preferences', '/choice', '/recommendations', '/recipe', '/restaurants'],
-  },
+const DISCOVER = {
+  label: 'Discover',
+  to: '/mood',
+  matches: ['/mood', '/preferences', '/choice', '/recommendations', '/recipe', '/restaurants'],
+}
+const HOME = { label: 'Home', to: '/', matches: ['/'] }
+
+// Different links depending on whether someone is logged in.
+const LOGGED_OUT_LINKS = [
+  HOME,
+  DISCOVER,
+  { label: 'Login', to: '/login', matches: ['/login'] },
+  { label: 'Register', to: '/register', matches: ['/register'] },
+]
+const LOGGED_IN_LINKS = [
+  HOME,
+  DISCOVER,
   { label: 'Favorites', to: '/favorites', matches: ['/favorites'] },
-  { label: 'About', to: '/about', matches: ['/about'] },
+  { label: 'History', to: '/history', matches: ['/history'] },
+  { label: 'Profile', to: '/profile', matches: ['/profile'] },
 ]
 
 function isActive(link, pathname) {
@@ -23,6 +34,14 @@ function isActive(link, pathname) {
 
 export default function Navbar() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { isAuthenticated, logout } = useAuth()
+  const links = isAuthenticated ? LOGGED_IN_LINKS : LOGGED_OUT_LINKS
+
+  function handleLogout() {
+    logout()
+    navigate('/')
+  }
 
   return (
     <header className="navbar">
@@ -31,7 +50,7 @@ export default function Navbar() {
           MoodBite
         </Link>
         <nav className="navbar__links">
-          {LINKS.map((link) => (
+          {links.map((link) => (
             <Link
               key={link.label}
               to={link.to}
@@ -40,6 +59,11 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
+          {isAuthenticated && (
+            <button type="button" className="navbar__link navbar__logout" onClick={handleLogout}>
+              Logout
+            </button>
+          )}
         </nav>
       </div>
     </header>

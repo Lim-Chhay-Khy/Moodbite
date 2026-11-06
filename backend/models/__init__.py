@@ -4,3 +4,6 @@
 from models.food import food_to_dict
 from models.recipe import recipe_to_dict
 from models.restaurant import restaurant_to_dict
+from models.user import user_to_dict
+from models.favorite import favorite_to_dict
+from models.history import history_to_dict

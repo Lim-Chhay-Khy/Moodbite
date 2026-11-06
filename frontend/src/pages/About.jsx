@@ -27,15 +27,15 @@ export default function About() {
         <ul>
           <li>Open a step-by-step recipe for any dish you can cook at home.</li>
           <li>See sample restaurants that serve a dish.</li>
-          <li>Save foods, recipes, and restaurants to your Favorites.</li>
+          <li>Create an account to save foods and restaurants to your Favorites.</li>
+          <li>See your past recommendation sessions in your History.</li>
         </ul>
       </section>
 
       <section>
         <h2>Coming next</h2>
         <p>
-          A Python Flask backend and database, user accounts, real restaurant data with a map, and
-          a free-text mood input.
+          Real restaurant data with a map, and a free-text mood input.
         </p>
       </section>
 

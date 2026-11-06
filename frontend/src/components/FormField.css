@@ -1,0 +1,34 @@
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field label {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.form-field input {
+  font: inherit;
+  padding: 12px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.form-field input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(232, 93, 58, 0.15);
+}
+
+.form-field input[aria-invalid='true'] {
+  border-color: #c0392b;
+}
+
+.form-field__error {
+  color: #b03a2e;
+  font-size: 0.85rem;
+}

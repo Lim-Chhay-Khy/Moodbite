@@ -11,7 +11,7 @@ const SERVICES = [
 ]
 
 // One restaurant object from the Flask API.
-//   onRemove: optional — shows "Remove from Favorites" when given
+//   onRemove: optional — shows "Remove Favorite" when given
 export default function RestaurantCard({ restaurant, onRemove }) {
   return (
     <article className="card restaurant-card">
@@ -46,10 +46,10 @@ export default function RestaurantCard({ restaurant, onRemove }) {
         <div className="card__actions">
           {onRemove ? (
             <Button variant="outline" onClick={onRemove}>
-              Remove from Favorites
+              Remove Favorite
             </Button>
           ) : (
-            <FavoriteButton type="restaurants" id={restaurant.id} label="Save Favorite" />
+            <FavoriteButton type="restaurant" id={restaurant.id} label="Save Favorite" />
           )}
         </div>
       </div>

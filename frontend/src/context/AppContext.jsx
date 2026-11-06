@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react'
+import { TIME_OPTIONS } from '../data/options.js'
 
 // This context holds everything the user has picked as they move through
 // the question pages:
@@ -34,6 +35,19 @@ export function AppProvider({ children }) {
     setDietary([])
   }
 
+  // Stage 4: "View Again" on the History page puts a saved session's
+  // answers back, so the Recommendations page can run them again.
+  // `entry` uses the API's format (time in minutes, budget null = any).
+  function loadAnswers(entry) {
+    setMood(entry.mood)
+    setPreferences(entry.preferences)
+    setCookOrEat(entry.choice)
+    setTimeLimit(TIME_OPTIONS.find((option) => option.maxMinutes === entry.time)?.id ?? null)
+    setBudget(entry.budget ?? 'any')
+    setDietary(entry.dietary)
+    setSurpriseMe(false)
+  }
+
   function togglePreference(preference) {
     setPreferences((current) => toggleInList(current, preference))
   }
@@ -64,6 +78,7 @@ export function AppProvider({ children }) {
     dietary,
     toggleDietary,
     resetSelections,
+    loadAnswers,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

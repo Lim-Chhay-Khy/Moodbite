@@ -1,0 +1,36 @@
+.history-card__date {
+  font-size: 1.15rem;
+}
+
+.history-card__details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.history-card__details dt {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.history-card__details dd {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.history-card__heading {
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+.history-card__foods {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

@@ -1,0 +1,62 @@
+/* Shared by Login, Register and the Edit Profile form */
+
+.auth-page {
+  display: flex;
+  justify-content: center;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 30px var(--color-card-shadow);
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.auth-card h1 {
+  font-size: 1.9rem;
+}
+
+.auth-card__subtitle {
+  color: var(--color-text-muted);
+  margin-top: -10px;
+}
+
+.auth-card__error {
+  background: #fdecea;
+  color: #b03a2e;
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.auth-card__success {
+  background: #eaf2ec;
+  color: var(--color-secondary-dark);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.auth-card__switch {
+  text-align: center;
+  font-size: 0.92rem;
+  color: var(--color-text-muted);
+}
+
+.auth-card__switch a {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+@media (max-width: 560px) {
+  .auth-card {
+    padding: 28px 20px;
+  }
+}

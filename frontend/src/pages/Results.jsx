@@ -1,5 +1,5 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import FoodCard from '../components/FoodCard.jsx'
 import Button from '../components/Button.jsx'
 import EmptyState from '../components/EmptyState.jsx'
@@ -18,7 +18,7 @@ export default function Results() {
   const { mood, preferences, cookOrEat, timeLimit, budget, dietary, surpriseMe } = answers
 
   // Ask Flask again only when one of the user's answers changes.
-  const { data: recommendations, loading, error, retry } = useApi(
+  const { data, loading, error, retry } = useApi(
     () => getRecommendations(answers),
     [mood, preferences, cookOrEat, timeLimit, budget, dietary, surpriseMe],
   )
@@ -42,7 +42,8 @@ export default function Results() {
       </div>
 
       <ResultsContent
-        recommendations={recommendations}
+        recommendations={data?.recommendations}
+        savedToHistory={data?.savedToHistory}
         loading={loading}
         error={error}
         retry={retry}
@@ -59,7 +60,7 @@ export default function Results() {
 }
 
 // Picks what to show: loading text, an error, an empty message, or cards.
-function ResultsContent({ recommendations, loading, error, retry, answeredQuestions }) {
+function ResultsContent({ recommendations, savedToHistory, loading, error, retry, answeredQuestions }) {
   const navigate = useNavigate()
 
   if (loading) {
@@ -97,6 +98,11 @@ function ResultsContent({ recommendations, loading, error, retry, answeredQuesti
     <>
       {answeredQuestions && !hasPerfectMatch && (
         <p className="notice">Nothing matched every answer perfectly, so here are the closest matches.</p>
+      )}
+      {savedToHistory && (
+        <p className="results__saved">
+          ✓ Saved to your <Link to="/history">History</Link>
+        </p>
       )}
       <div className="card-grid">
         {recommendations.map((food) => (

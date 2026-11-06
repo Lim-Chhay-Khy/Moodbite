@@ -5,6 +5,7 @@ Fills MongoDB with the sample data from seed_data.py.
 
 WARNING: it DELETES the existing foods and restaurants first, so running
 it again always gives you a fresh copy of the sample data.
+Users, favorites and history are NOT touched, so accounts stay safe.
 """
 
 import sys
@@ -12,7 +13,7 @@ import sys
 from pymongo.errors import OperationFailure, ServerSelectionTimeoutError
 
 from config import Config
-from database import client, db
+from database import client, create_indexes, db
 from seed_data import FOODS, RECIPES, RESTAURANTS
 
 
@@ -78,9 +79,8 @@ def seed():
     db.foods.insert_many(foods)
     db.restaurants.insert_many(restaurants)
 
-    # An index makes "find restaurants serving food X" fast, like the
-    # index at the back of a book.
-    db.restaurants.create_index("food_ids")
+    # Indexes: fast lookups, plus unique emails and no duplicate favorites.
+    create_indexes()
 
     with_recipe = db.foods.count_documents({"recipe": {"$ne": None}})
     print(

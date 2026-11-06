@@ -11,7 +11,7 @@ import './FoodCard.css'
 //   food:     a food object from the Flask API (plus `reason` when it
 //             comes from the recommendation engine)
 //   onRemove: optional — when given (Favorites page), shows a
-//             "Remove from Favorites" button instead of the Save button
+//             "Remove Favorite" button instead of the Save button
 export default function FoodCard({ food, onRemove }) {
   const navigate = useNavigate()
   const timeText = food.cookingTime === null ? 'Eat out' : `${food.cookingTime} min`
@@ -63,10 +63,10 @@ export default function FoodCard({ food, onRemove }) {
           </Button>
           {onRemove ? (
             <Button variant="outline" onClick={onRemove}>
-              Remove from Favorites
+              Remove Favorite
             </Button>
           ) : (
-            <FavoriteButton type="foods" id={food.id} />
+            <FavoriteButton type="food" id={food.id} />
           )}
         </div>
       </div>

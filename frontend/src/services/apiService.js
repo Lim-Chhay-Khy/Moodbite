@@ -10,15 +10,65 @@ import { TIME_OPTIONS } from '../data/options.js'
 // ---------------------------------------------------------------------
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
+// ----- Login token storage (Stage 4) -----
+// After login, Flask gives us a token (JWT) that proves who the user is.
+// We keep it in localStorage so the login survives a page refresh.
+//
+// Learning-project note: localStorage is simple, but any JavaScript on the
+// page can read it. Production apps often use an HTTP-only cookie instead,
+// which JavaScript can't read. We never store the password itself.
+const TOKEN_KEY = 'moodbite_token'
+
+// Sent when the server says our token is no longer valid (expired, etc.),
+// so AuthContext can log the user out everywhere at once.
+export const SESSION_ENDED_EVENT = 'moodbite-session-ended'
+
+export function getToken() {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null // storage blocked (e.g. some private windows)
+  }
+}
+
+export function saveToken(token) {
+  try {
+    localStorage.setItem(TOKEN_KEY, token)
+  } catch {
+    // If storage is blocked, the login just won't survive a refresh.
+  }
+}
+
+export function removeToken() {
+  try {
+    localStorage.removeItem(TOKEN_KEY)
+  } catch {
+    // nothing to remove
+  }
+}
+
 // Sends one request and returns the JSON body.
+//   options.method   'GET' (default), 'POST', 'PUT', 'DELETE'
+//   options.body     an object to send as JSON
+//   options.sendToken  false for login/register (no token needed)
 // If anything goes wrong it throws an Error with:
 //   error.message  a friendly message we can show on the page
-//   error.status   the HTTP status code (404, 500...), or 0 if the
+//   error.status   the HTTP status code (401, 404...), or 0 if the
 //                  server couldn't be reached at all
-async function request(path, options = {}) {
+async function request(path, { method = 'GET', body, sendToken = true } = {}) {
+  const token = sendToken ? getToken() : null
+  const headers = {}
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  // This is how Flask knows who we are: "Authorization: Bearer <token>"
+  if (token) headers.Authorization = `Bearer ${token}`
+
   let response
   try {
-    response = await fetch(`${API_URL}${path}`, options)
+    response = await fetch(`${API_URL}${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    })
   } catch {
     // fetch() only throws when there is no response at all
     // (Flask not running, wrong address, no internet...).
@@ -30,6 +80,12 @@ async function request(path, options = {}) {
   // If the body isn't valid JSON, use an empty object instead of crashing.
   const data = await response.json().catch(() => ({}))
 
+  // We sent a token but the server rejected it: the login has ended.
+  if (response.status === 401 && token) {
+    removeToken()
+    window.dispatchEvent(new Event(SESSION_ENDED_EVENT))
+  }
+
   if (!response.ok) {
     const error = new Error(data.message || data.error || 'Something went wrong on the server.')
     error.status = response.status
@@ -37,6 +93,8 @@ async function request(path, options = {}) {
   }
   return data
 }
+
+// ===== Foods, recipes, restaurants (Stage 3) =====
 
 // GET /api/foods  ->  [food, food, ...]
 export async function getFoods() {
@@ -60,15 +118,17 @@ export function getRestaurants(id) {
   return request(`/foods/${id}/restaurants`)
 }
 
-// GET /api/restaurants  ->  [restaurant, ...]   (used by Favorites)
+// GET /api/restaurants  ->  [restaurant, ...]
 export async function getAllRestaurants() {
   const data = await request('/restaurants')
   return data.restaurants
 }
 
-// POST /api/recommendations  ->  [food, food, food]
+// POST /api/recommendations  ->  { recommendations: [...], savedToHistory }
 // Turns the answers stored in AppContext into the JSON body Flask expects.
-export async function getRecommendations(answers) {
+// If the user is logged in, the token is sent too, so Flask saves the
+// session to their History.
+export function getRecommendations(answers) {
   const { mood, preferences, cookOrEat, timeLimit, budget, dietary, surpriseMe } = answers
 
   // "Surprise Me", or the user opened the page without answering.
@@ -85,10 +145,71 @@ export async function getRecommendations(answers) {
           dietary,
         }
 
-  const data = await request('/recommendations', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  return data.recommendations
+  return request('/recommendations', { method: 'POST', body })
+}
+
+// ===== Accounts (Stage 4) =====
+
+// POST /api/auth/register  ->  { message }
+export function registerUser({ name, email, password }) {
+  return request('/auth/register', { method: 'POST', body: { name, email, password }, sendToken: false })
+}
+
+// POST /api/auth/login  ->  { message, user, token }
+export function loginUser({ email, password }) {
+  return request('/auth/login', { method: 'POST', body: { email, password }, sendToken: false })
+}
+
+// GET /api/auth/me  ->  user   (checks the saved token after a refresh)
+export async function getCurrentUser() {
+  const data = await request('/auth/me')
+  return data.user
+}
+
+// GET /api/profile  ->  { user, favoritesCount, historyCount }
+export function getProfile() {
+  return request('/profile')
+}
+
+// PUT /api/profile  ->  { user, favoritesCount, historyCount }
+export function updateProfile({ name, email }) {
+  return request('/profile', { method: 'PUT', body: { name, email } })
+}
+
+// ===== Favorites (Stage 4) =====
+
+// GET /api/favorites  ->  [favorite, ...]
+export async function getFavorites() {
+  const data = await request('/favorites')
+  return data.favorites
+}
+
+// POST /api/favorites  ->  { message, favorite }
+// Pass { foodId } OR { restaurantId }.
+export function addFavorite({ foodId, restaurantId }) {
+  const body = foodId !== undefined ? { food_id: foodId } : { restaurant_id: restaurantId }
+  return request('/favorites', { method: 'POST', body })
+}
+
+// DELETE /api/favorites/:id  ->  { message }
+export function removeFavorite(favoriteId) {
+  return request(`/favorites/${favoriteId}`, { method: 'DELETE' })
+}
+
+// ===== History (Stage 4) =====
+
+// GET /api/history  ->  [session, ...] newest first
+export async function getHistory() {
+  const data = await request('/history')
+  return data.history
+}
+
+// DELETE /api/history/:id
+export function deleteHistoryItem(id) {
+  return request(`/history/${id}`, { method: 'DELETE' })
+}
+
+// DELETE /api/history  (clears everything)
+export function clearHistory() {
+  return request('/history', { method: 'DELETE' })
 }

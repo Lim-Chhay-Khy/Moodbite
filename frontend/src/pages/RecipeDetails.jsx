@@ -58,7 +58,7 @@ export default function RecipeDetails() {
           <h1>{food.name}</h1>
           <p className="recipe-page__description">{food.description}</p>
         </div>
-        <FavoriteButton type="recipes" id={food.id} label="Save to Favorites" />
+        <FavoriteButton type="food" id={food.id} label="Save to Favorites" />
       </header>
 
       <RecipeStats food={food} recipe={recipe} />

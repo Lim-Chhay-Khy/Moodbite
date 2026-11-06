@@ -1,0 +1,16 @@
+/* "display: contents" lets the button and its message sit directly inside
+   the card's row of buttons, so the message can take a full line. */
+.favorite-button {
+  display: contents;
+}
+
+.favorite-button__message {
+  flex-basis: 100%;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-secondary-dark);
+}
+
+.favorite-button__message a {
+  color: var(--color-primary);
+}

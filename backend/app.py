@@ -8,9 +8,23 @@ from flask_cors import CORS
 from pymongo.errors import PyMongoError
 
 from config import Config
+from database import create_indexes
+from routes.auth_routes import auth_routes
+from routes.favorite_routes import favorite_routes
 from routes.food_routes import food_routes
+from routes.history_routes import history_routes
+from routes.profile_routes import profile_routes
 from routes.recommendation_routes import recommendation_routes
 from routes.restaurant_routes import restaurant_routes
+
+# Logins can't work without a secret to sign tokens with, so stop early
+# with a clear message instead of failing later.
+if not Config.JWT_SECRET_KEY:
+    raise SystemExit(
+        "\nJWT_SECRET_KEY is missing from backend/.env.\n"
+        "Make one with:  python -c \"import secrets; print(secrets.token_hex(32))\"\n"
+        "and add a line:  JWT_SECRET_KEY=<the value>\n"
+    )
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -29,6 +43,18 @@ CORS(app, resources={r"/api/*": {"origins": Config.FRONTEND_URL}})
 app.register_blueprint(food_routes)
 app.register_blueprint(restaurant_routes)
 app.register_blueprint(recommendation_routes)
+app.register_blueprint(auth_routes)  # Stage 4
+app.register_blueprint(favorite_routes)  # Stage 4
+app.register_blueprint(history_routes)  # Stage 4
+app.register_blueprint(profile_routes)  # Stage 4
+
+# Make sure the indexes exist (unique emails, no duplicate favorites).
+# If MongoDB can't be reached yet, start anyway — the database error
+# handler below will explain the problem on each request.
+try:
+    create_indexes()
+except PyMongoError as error:
+    app.logger.warning("Could not create indexes yet: %s", error)
 
 
 # A quick "is the server up?" check: GET /api/health
