@@ -8,7 +8,7 @@ import RecommendationReason from './RecommendationReason.jsx'
 import './FoodCard.css'
 
 // Used on the Recommendations page and in the "Favorite Foods" section.
-//   food:     a food object (from data/foods.js, plus `reason` when it
+//   food:     a food object from the Flask API (plus `reason` when it
 //             comes from the recommendation engine)
 //   onRemove: optional — when given (Favorites page), shows a
 //             "Remove from Favorites" button instead of the Save button
@@ -18,7 +18,7 @@ export default function FoodCard({ food, onRemove }) {
 
   return (
     <article className="card food-card">
-      <FoodImage src={food.image} emoji={food.emoji} alt={food.name} />
+      <FoodImage src={food.imageUrl} emoji={food.emoji} alt={food.name} />
       <div className="card__body">
         <div className="food-card__top">
           <h3 className="food-card__name">{food.name}</h3>

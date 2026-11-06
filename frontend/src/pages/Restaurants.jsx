@@ -3,19 +3,25 @@ import { useNavigate, useParams } from 'react-router-dom'
 import BackButton from '../components/BackButton.jsx'
 import Button from '../components/Button.jsx'
 import EmptyState from '../components/EmptyState.jsx'
+import ErrorMessage from '../components/ErrorMessage.jsx'
+import LoadingMessage from '../components/LoadingMessage.jsx'
 import RestaurantCard from '../components/RestaurantCard.jsx'
-import { getFoodById } from '../data/foods.js'
-import { getRestaurantsForFood } from '../data/restaurants.js'
+import useApi from '../hooks/useApi.js'
+import { getRestaurants } from '../services/apiService.js'
 
 // Route: /restaurants/:foodId
-// Stage 2 uses sample data from data/restaurants.js.
+// Data comes from GET /api/foods/:id/restaurants (sample data in MongoDB).
 // Stage 5 will swap in a real restaurant API.
 export default function Restaurants() {
   const { foodId } = useParams()
   const navigate = useNavigate()
-  const food = getFoodById(foodId)
+  const { data, loading, error, retry } = useApi(() => getRestaurants(foodId), [foodId])
 
-  if (!food) {
+  if (loading) {
+    return <LoadingMessage text="Finding restaurants..." />
+  }
+
+  if (error?.status === 404) {
     return (
       <div className="page">
         <EmptyState emoji="🔍" title="Food not found." message="We couldn't find that dish.">
@@ -25,7 +31,15 @@ export default function Restaurants() {
     )
   }
 
-  const restaurants = getRestaurantsForFood(food.id)
+  if (error) {
+    return (
+      <div className="page">
+        <ErrorMessage title="Sorry, we couldn't load restaurants." error={error} onRetry={retry} />
+      </div>
+    )
+  }
+
+  const { food, restaurants } = data
 
   return (
     <div className="page fade-in">

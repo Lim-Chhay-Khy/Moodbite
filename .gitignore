@@ -1,4 +1,15 @@
-node_modules
-dist
-.DS_Store
+# Secrets — never upload these
 .env
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Node / React
+node_modules/
+dist/
+
+# OS files
+.DS_Store

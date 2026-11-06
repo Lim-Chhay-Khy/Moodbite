@@ -4,35 +4,31 @@ import BackButton from '../components/BackButton.jsx'
 import Button from '../components/Button.jsx'
 import DietaryTags from '../components/DietaryTags.jsx'
 import EmptyState from '../components/EmptyState.jsx'
+import ErrorMessage from '../components/ErrorMessage.jsx'
 import FavoriteButton from '../components/FavoriteButton.jsx'
 import FoodImage from '../components/FoodImage.jsx'
+import LoadingMessage from '../components/LoadingMessage.jsx'
 import RecipeStats from '../components/RecipeStats.jsx'
-import { getFoodById } from '../data/foods.js'
-import { getRecipeById } from '../data/recipes.js'
+import useApi from '../hooks/useApi.js'
+import { getRecipe } from '../services/apiService.js'
 import './RecipeDetails.css'
 
-// Route: /recipe/:id   (id is the food id, e.g. /recipe/chicken-fried-rice)
+// Route: /recipe/:id   (id is the food id, e.g. /recipe/1)
+// Data comes from GET /api/foods/:id/recipe
 export default function RecipeDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const food = getFoodById(id)
-  const recipe = getRecipeById(id)
+  const { data, loading, error, retry } = useApi(() => getRecipe(id), [id])
 
-  if (!food || !recipe) {
+  if (loading) {
+    return <LoadingMessage text="Loading recipe..." />
+  }
+
+  // 404 from Flask = this food or recipe doesn't exist.
+  if (error?.status === 404) {
     return (
       <div className="page">
-        <EmptyState
-          emoji="🔍"
-          title="Recipe not found."
-          message={
-            food
-              ? `${food.name} is a restaurant-only dish, so we don't have a recipe for it.`
-              : "We couldn't find a recipe with that link."
-          }
-        >
-          {food?.availableAtRestaurant && (
-            <Button onClick={() => navigate(`/restaurants/${food.id}`)}>Find a Restaurant</Button>
-          )}
+        <EmptyState emoji="🔍" title="Recipe not found." message={error.message}>
           <Button variant="outline" onClick={() => navigate('/recommendations')}>
             Back to Recommendations
           </Button>
@@ -41,10 +37,21 @@ export default function RecipeDetails() {
     )
   }
 
+  // Any other problem (server down, database error...).
+  if (error) {
+    return (
+      <div className="page">
+        <ErrorMessage title="Sorry, we couldn't load this recipe." error={error} onRetry={retry} />
+      </div>
+    )
+  }
+
+  const { food, recipe } = data
+
   return (
     <div className="page fade-in recipe-page">
       <BackButton to="/recommendations" label="Back to Recommendations" />
-      <FoodImage src={food.image} emoji={food.emoji} alt={food.name} size="large" />
+      <FoodImage src={food.imageUrl} emoji={food.emoji} alt={food.name} size="large" />
 
       <header className="recipe-page__header">
         <div>
@@ -74,7 +81,7 @@ export default function RecipeDetails() {
         <section className="recipe-page__section">
           <h2>Instructions</h2>
           <ol className="recipe-page__steps">
-            {recipe.steps.map((step) => (
+            {recipe.instructions.map((step) => (
               <li key={step}>{step}</li>
             ))}
           </ol>

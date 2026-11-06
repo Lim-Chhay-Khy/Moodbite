@@ -1,5 +1,5 @@
-// Fixed option lists for the question pages. Later these could come from
-// the Flask API instead (see services/recommend.js for notes on that).
+// Fixed option lists for the question pages. The ids here must match the
+// values the Flask backend understands (moods, preference tags, etc.).
 
 export const MOODS = [
   { id: 'happy', label: 'Happy', emoji: '😊' },
@@ -10,21 +10,19 @@ export const MOODS = [
   { id: 'unsure', label: "I Don't Know", emoji: '😐' },
 ]
 
-// `phrase` is how the preference reads inside a sentence, used by
-// services/explanation.js ("...and want comfort food").
 export const PREFERENCES = [
-  { id: 'spicy', label: 'Spicy', phrase: 'something spicy' },
-  { id: 'sweet', label: 'Sweet', phrase: 'something sweet' },
-  { id: 'healthy', label: 'Healthy', phrase: 'something healthy' },
-  { id: 'comfort', label: 'Comfort Food', phrase: 'comfort food' },
-  { id: 'fast', label: 'Fast Food', phrase: 'something fast' },
-  { id: 'protein', label: 'High Protein', phrase: 'something high in protein' },
-  { id: 'vegetarian', label: 'Vegetarian', phrase: 'vegetarian food' },
-  { id: 'asian', label: 'Asian Food', phrase: 'Asian food' },
-  { id: 'western', label: 'Western Food', phrase: 'Western food' },
-  { id: 'light', label: 'Something Light', phrase: 'something light' },
-  { id: 'filling', label: 'Something Filling', phrase: 'something filling' },
-  { id: 'unsure', label: "I Don't Know", phrase: '' },
+  { id: 'spicy', label: 'Spicy' },
+  { id: 'sweet', label: 'Sweet' },
+  { id: 'healthy', label: 'Healthy' },
+  { id: 'comfort', label: 'Comfort Food' },
+  { id: 'fast', label: 'Fast Food' },
+  { id: 'protein', label: 'High Protein' },
+  { id: 'vegetarian', label: 'Vegetarian' },
+  { id: 'asian', label: 'Asian Food' },
+  { id: 'western', label: 'Western Food' },
+  { id: 'light', label: 'Something Light' },
+  { id: 'filling', label: 'Something Filling' },
+  { id: 'unsure', label: "I Don't Know" },
 ]
 
 export const COOK_OR_RESTAURANT = [
@@ -50,8 +48,7 @@ export const COOK_OR_RESTAURANT = [
 
 // ----- Stage 2: extra questions -----
 
-// maxMinutes = the longest total cooking time that still "fits".
-// null means no limit.
+// maxMinutes is what gets sent to Flask as "time" (null = no limit).
 export const TIME_OPTIONS = [
   { id: 'under-15', label: 'Under 15 minutes', maxMinutes: 15 },
   { id: '15-30', label: '15–30 minutes', maxMinutes: 30 },
@@ -60,7 +57,7 @@ export const TIME_OPTIONS = [
 ]
 
 // A food "fits" the budget when its price level has the same number of
-// "$" signs or fewer (so a "$" food fits a "$$" budget).
+// "$" signs or fewer (so a "$" food fits a "$$" budget). Checked in Flask.
 export const BUDGET_OPTIONS = [
   { id: '$', label: '$' },
   { id: '$$', label: '$$' },
@@ -68,14 +65,14 @@ export const BUDGET_OPTIONS = [
   { id: 'any', label: 'No preference' },
 ]
 
-// The ids here are the same tags used in each food's `dietary` array in
-// data/foods.js. A food is only allowed if its `dietary` array contains
-// every restriction the user picked (see services/recommend.js).
+// The ids here are the same tags stored in each food's dietary_tags
+// list in MongoDB. Flask only keeps a food if its tags contain every
+// restriction the user picked (backend/services/recommendation_service.py).
 export const DIETARY_OPTIONS = [
   { id: 'none', label: 'No Restrictions' },
   { id: 'vegetarian', label: 'Vegetarian' },
   { id: 'vegan', label: 'Vegan' },
-  { id: 'halal-friendly', label: 'Halal' },
+  { id: 'halal', label: 'Halal' },
   { id: 'no-seafood', label: 'No Seafood' },
   { id: 'dairy-free', label: 'Dairy-Free' },
 ]

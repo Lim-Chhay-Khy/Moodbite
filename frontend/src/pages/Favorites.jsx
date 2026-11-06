@@ -2,46 +2,67 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../components/Button.jsx'
 import EmptyState from '../components/EmptyState.jsx'
+import ErrorMessage from '../components/ErrorMessage.jsx'
 import FoodCard from '../components/FoodCard.jsx'
+import LoadingMessage from '../components/LoadingMessage.jsx'
 import RecipeCard from '../components/RecipeCard.jsx'
 import RestaurantCard from '../components/RestaurantCard.jsx'
-import { getFoodById } from '../data/foods.js'
-import { getRecipeById } from '../data/recipes.js'
-import { getRestaurantById } from '../data/restaurants.js'
+import useApi from '../hooks/useApi.js'
+import { getAllRestaurants, getFoods } from '../services/apiService.js'
 import { getFavorites, removeFavorite } from '../services/favoriteService.js'
 import './Favorites.css'
 
 // Route: /favorites
-// favoriteService gives us saved ids; we look each id up in the data
-// files. `.filter(Boolean)` skips any id that no longer exists in the data.
+// Saved ids still live in localStorage (until login in Stage 4).
+// The food and restaurant details come from the Flask API.
 export default function Favorites() {
   const navigate = useNavigate()
   const [favorites, setFavorites] = useState(getFavorites)
+  const { data, loading, error, retry } = useApi(
+    () => Promise.all([getFoods(), getAllRestaurants()]), // two requests at once
+    [],
+  )
 
   function handleRemove(type, id) {
     removeFavorite(type, id)
     setFavorites(getFavorites()) // re-read so the page updates right away
   }
 
-  const savedFoods = favorites.foods.map(getFoodById).filter(Boolean)
-  const savedRecipes = favorites.recipes.filter((id) => getFoodById(id) && getRecipeById(id))
-  const savedRestaurants = favorites.restaurants.map(getRestaurantById).filter(Boolean)
+  const emptyMessage = (
+    <div className="page">
+      <EmptyState
+        emoji="♡"
+        title="No favorites yet"
+        message="Save foods, recipes, or restaurants and they will appear here."
+      >
+        <Button onClick={() => navigate('/mood')}>Discover Food</Button>
+      </EmptyState>
+    </div>
+  )
 
-  const isEmpty = savedFoods.length + savedRecipes.length + savedRestaurants.length === 0
-
-  if (isEmpty) {
+  const nothingSaved =
+    favorites.foods.length + favorites.recipes.length + favorites.restaurants.length === 0
+  if (nothingSaved) return emptyMessage
+  if (loading) return <LoadingMessage text="Loading your favorites..." />
+  if (error) {
     return (
       <div className="page">
-        <EmptyState
-          emoji="♡"
-          title="No favorites yet"
-          message="Save foods, recipes, or restaurants and they will appear here."
-        >
-          <Button onClick={() => navigate('/mood')}>Discover Food</Button>
-        </EmptyState>
+        <ErrorMessage title="Sorry, we couldn't load your favorites." error={error} onRetry={retry} />
       </div>
     )
   }
+
+  // Turn saved ids into full objects. `.filter(Boolean)` skips ids that
+  // don't exist in the database (for example, old Stage 2 ids).
+  const [foods, restaurants] = data
+  const findFood = (id) => foods.find((food) => food.id === id)
+  const findRestaurant = (id) => restaurants.find((restaurant) => restaurant.id === id)
+
+  const savedFoods = favorites.foods.map(findFood).filter(Boolean)
+  const savedRecipes = favorites.recipes.map(findFood).filter((food) => food && food.canCook)
+  const savedRestaurants = favorites.restaurants.map(findRestaurant).filter(Boolean)
+
+  if (savedFoods.length + savedRecipes.length + savedRestaurants.length === 0) return emptyMessage
 
   return (
     <div className="page fade-in">
@@ -57,13 +78,8 @@ export default function Favorites() {
       </FavoriteSection>
 
       <FavoriteSection title="Favorite Recipes" count={savedRecipes.length}>
-        {savedRecipes.map((id) => (
-          <RecipeCard
-            key={id}
-            food={getFoodById(id)}
-            recipe={getRecipeById(id)}
-            onRemove={() => handleRemove('recipes', id)}
-          />
+        {savedRecipes.map((food) => (
+          <RecipeCard key={food.id} food={food} onRemove={() => handleRemove('recipes', food.id)} />
         ))}
       </FavoriteSection>
 

@@ -1,135 +1,245 @@
-# MoodBite 
+# MoodBite
 
-A food recommendation web app that answers "What should I eat today?" based
-on your mood, cravings, dietary needs, whether you want to cook or eat out,
-and how much time and money you have.
+Smart food recommendation web application. Tell MoodBite how you feel, what
+you're craving, your dietary needs, and how much time and money you have,
+and it recommends three meals and explains why.
 
-**Stage 2** makes the results useful: recipe pages, restaurant suggestions,
-a working Favorites system, natural-language explanations, and extra
-questions (time, budget, dietary). It is still a React-only app — sample
-data + `localStorage`. No backend, login, AI, or external APIs yet.
+## Technologies
 
-## How to run it
+- React (Vite, React Router)
+- JavaScript, HTML, CSS
+- Python
+- Flask (+ Flask-CORS)
+- MongoDB (with PyMongo)
+- REST API (JSON)
+
+## Features
+
+- Mood-based meal recommendations
+- Food preference filtering
+- Budget filtering
+- Time filtering
+- Dietary filtering (vegetarian, vegan, halal, no seafood, dairy-free)
+- Recipe instructions
+- Restaurant suggestions (sample data)
+- Favorites (saved in the browser)
+
+## Project Architecture
+
+```
+React (localhost:5173)  →  Flask REST API (localhost:5000)  →  MongoDB (Atlas or local)
+       frontend/                      backend/                  moodbite database
+```
+
+1. React shows the pages and collects the user's answers.
+2. React calls the Flask API with `fetch()` (all calls are in
+   `frontend/src/services/apiService.js`).
+3. Flask runs the recommendation logic and reads MongoDB through PyMongo.
+4. Flask sends JSON back, and React displays it.
+
+```
+MoodBite/
+├── frontend/                  React app
+│   └── src/
+│       ├── services/apiService.js     every call to Flask
+│       ├── services/favoriteService.js favorites in localStorage
+│       ├── hooks/useApi.js            loading / error / data for API calls
+│       ├── pages/  components/  context/  data/options.js
+│
+└── backend/                   Flask API
+    ├── app.py                 creates the app, CORS, error handlers
+    ├── config.py              reads .env (MongoDB address, port...)
+    ├── database.py            the shared MongoDB connection (`db`)
+    ├── models/                document shapes + functions that turn them into JSON
+    ├── routes/                food_routes, restaurant_routes, recommendation_routes
+    ├── services/              recommendation_service, explanation_service
+    ├── seed.py + seed_data.py fills the database with sample data
+    ├── requirements.txt
+    └── .env.example           copy to .env
+```
+
+## Database Setup
+
+You can use **MongoDB Atlas** (free cloud database, nothing to install) or
+MongoDB installed on your own computer.
+
+**1a. Option A: MongoDB Atlas (cloud)**
+
+1. Sign in at cloud.mongodb.com and create a free cluster (if you don't have one).
+2. **Database Access** → add a database user with a password.
+3. **Network Access** → **Add IP Address** → **Add Current IP Address**.
+4. **Database** → **Connect** → **Drivers** → copy the connection string.
+
+**1b. Option B: MongoDB on your computer**
+
+Download **MongoDB Community Server** (Windows `.msi`) from
+mongodb.com/try/download/community. Choose **Complete**, and keep
+**"Install MongoD as a Service"** and **"Install MongoDB Compass"** checked.
+Check it's running in PowerShell with `Get-Service MongoDB` (Status: `Running`).
+
+You do **not** need to create the database yourself. MongoDB creates
+`moodbite` automatically the first time `seed.py` saves data.
+
+**2. Configure `.env`.** In the `backend` folder, copy `.env.example` to a new
+file called `.env` and set `MONGODB_URI`:
+
+```text
+# Atlas:
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/?appName=Cluster0
+# or local:
+MONGODB_URI=mongodb://localhost:27017
+
+MONGO_DB_NAME=moodbite
+```
+
+`.env` is in `.gitignore`, so your password never goes to GitHub.
+
+**3. Install Python dependencies** (inside `backend/`):
 
 ```bash
-npm install
+python -m venv venv
+venv\Scripts\activate          # Windows (PowerShell / cmd)
+source venv/bin/activate       # Mac / Linux
+pip install -r requirements.txt
+```
+
+**4. Run the seed script.** It adds 22 foods (20 with recipes) and 14
+restaurants. Running it again resets the data.
+
+```bash
+python seed.py
+```
+
+**5. Start the Flask server:**
+
+```bash
+python app.py
+```
+
+Check it works: open http://localhost:5000/api/foods in your browser.
+
+To see the data: in Atlas, open **Database → Browse Collections**; or open
+**MongoDB Compass**, paste your `MONGODB_URI`, and open the `moodbite` database.
+
+## Running the Backend (after the first setup)
+
+```bash
+cd backend
+venv\Scripts\activate      # or: source venv/bin/activate
+python app.py
+```
+
+## Running the Frontend
+
+In a **second** terminal (Flask keeps running in the first one):
+
+```bash
+cd frontend
+npm install        # first time only
 npm run dev
 ```
 
-Then open the local URL Vite prints (usually `http://localhost:5173`).
-`npm run build` checks that everything compiles.
+Open http://localhost:5173.
 
-## App flow and routes
+## Database Collections
 
-```
-/  (Home)
- ├─ "Find My Food" → /mood → /preferences → /choice → /recommendations
- └─ "Surprise Me"  ───────────────────────────────→ /recommendations
+MongoDB stores **documents** (like JSON objects) in **collections** (like
+tables). There is no fixed schema; the shape of each document is written
+in the comments of `backend/models/`.
 
-/recommendations
- ├─ Cook            → /recipe/:id            (e.g. /recipe/chicken-fried-rice)
- ├─ Find Restaurant → /restaurants/:foodId   (e.g. /restaurants/ramen)
- └─ Save            → stored in localStorage → /favorites
-
-/favorites   /about   * (Page not found)
-```
-
-| Page file | Route | Asks / shows |
+| Collection | What each document holds | How it links |
 |---|---|---|
-| `MoodSelect.jsx` | `/mood` | Mood |
-| `PreferenceSelect.jsx` | `/preferences` | Cravings + dietary preferences |
-| `CookOrRestaurant.jsx` | `/choice` | Cook / restaurant / either + time + budget |
-| `Results.jsx` | `/recommendations` | Top 3 foods with "Why we recommend this" |
-| `RecipeDetails.jsx` | `/recipe/:id` | Full recipe |
-| `Restaurants.jsx` | `/restaurants/:foodId` | Restaurant cards |
-| `Favorites.jsx` | `/favorites` | Saved foods, recipes, restaurants |
-| `About.jsx` | `/about` | About the app |
+| `foods` | One dish + recommendation data (`moods`, `preferences`, `dietary_tags` lists) **and its recipe embedded inside** (`recipe`, or `null` if restaurant-only) | Food → Recipe is one-to-one, so the recipe lives *inside* the food document |
+| `restaurants` | One sample restaurant + a `food_ids` list, e.g. `[1, 14, 19]` | Restaurant ↔ Food is many-to-many: `find({"food_ids": 1})` finds every restaurant serving food 1 |
+| `favorites` | Not created yet; planned for Stage 4 (login) | Will hold `user_id`, `food_id`, `restaurant_id`, `created_at` |
 
-The Stage 1 URLs `/cook-or-restaurant` and `/results` redirect to the new ones.
+Foods and restaurants use simple numbers as their `_id` (instead of
+MongoDB's long ObjectIds) so URLs stay short, e.g. `/recipe/1`.
 
-## Folder structure
+## API Routes
 
-```
-src/
-├── main.jsx, App.jsx, index.css     # entry, routes, shared styles (.card, .card-grid)
-├── context/AppContext.jsx           # all of the user's answers
-├── data/
-│   ├── options.js                   # question options (moods, cravings, time, budget, dietary)
-│   ├── foods.js                     # 22 foods + getFoodById()
-│   ├── recipes.js                   # 20 recipes + getRecipeById()
-│   └── restaurants.js               # 14 sample restaurants + getRestaurantsForFood()
-├── services/
-│   ├── recommend.js                 # filtering + scoring → top 3 foods
-│   ├── explanation.js               # builds the "Why we recommend this" text
-│   └── favoriteService.js           # addFavorite / removeFavorite / isFavorite / getFavorites
-├── components/
-│   ├── Navbar, Button, MoodCard, PreferenceCard        (Stage 1)
-│   ├── FoodCard                                        (Stage 1, upgraded)
-│   ├── RecipeCard, RestaurantCard, FavoriteButton,
-│   │   PreferenceSelector, RecommendationReason,
-│   │   BackButton, FoodImage, DietaryTags,
-│   │   RecipeStats, EmptyState                         (Stage 2)
-└── pages/  (see table above)
-```
+| Method | Route | Returns | Errors |
+|---|---|---|---|
+| GET | `/api/health` | `{"status": "ok"}` | — |
+| GET | `/api/foods` | `{"foods": [...]}` | 500 |
+| GET | `/api/foods/<id>` | `{"food": {...}}` | 404 `Food not found` |
+| GET | `/api/foods/<id>/recipe` | `{"food": {...}, "recipe": {...}}` | 404 `Food not found` / `Recipe not found` |
+| GET | `/api/foods/<id>/restaurants` | `{"food": {...}, "restaurants": [...]}` (may be empty) | 404 `Food not found` |
+| GET | `/api/restaurants` | `{"restaurants": [...]}` | 500 |
+| POST | `/api/recommendations` | `{"recommendations": [...]}` (top 3) | 400 bad request |
 
-Each component/page keeps its own `.css` file next to it.
+### Common MongoDB connection errors
 
-## How recommendations work (`services/recommend.js`)
-
-**Step 1 — remove foods that can't work (hard filters):**
-
-- A food must be safe for **every** dietary restriction picked.
-  `food.dietary` lists what a dish is safe for, e.g. `['vegan', 'dairy-free']`,
-  so the check is `restrictions.every(r => food.dietary.includes(r))`.
-- Cook at Home → remove foods with `canCook: false` (restaurant-only).
-- Find a Restaurant → remove foods with `availableAtRestaurant: false`.
-
-**Step 2 — score what's left:**
-
-| Rule | Points |
+| Error | Fix |
 |---|---|
-| Mood matches | +3 |
-| Each matching craving | +3 |
-| Fits cook / restaurant choice ("Either" rewards foods offering both) | +2 |
-| Fits time limit (total cooking time ≤ limit; eating out always fits) | +2 |
-| Fits budget (`"$".length <= "$$".length`) | +1 |
-| Fits dietary preferences (always true after Step 1) | +3 |
+| `Could not connect to MongoDB` / timeout | Atlas: add your IP under **Network Access**. Local: start the MongoDB service. |
+| `bad auth : authentication failed` | Wrong username/password in `.env`, or the password has special characters that need encoding. |
+| `CERTIFICATE_VERIFY_FAILED` | Run `pip install -r requirements.txt` again (it installs `certifi`). |
+| DNS error with `mongodb+srv` | Check your internet; some school/work Wi-Fi blocks it. |
 
-**Step 3 —** sort highest first and return the top 3. If none of them is a
-"perfect match" (right mood + a matching craving + within time + within
-budget), the page says these are the *closest* matches. If Step 1 removed
-every food, the page explains why and links back to change answers.
+### Testing POST /api/recommendations
 
-"Surprise Me" (or opening `/recommendations` without answering) shows
-popular picks instead.
-
-## How Favorites work (`services/favoriteService.js`)
-
-Everything is stored under one `localStorage` key, as id lists:
+Use Postman or Thunder Client: method **POST**, URL
+`http://localhost:5000/api/recommendations`, Body → **JSON**:
 
 ```json
-"moodbite-favorites": { "foods": ["ramen"], "recipes": ["ramen"], "restaurants": [2] }
+{
+  "mood": "tired",
+  "preferences": ["comfort", "asian"],
+  "choice": "cook",
+  "time": 30,
+  "budget": "$",
+  "dietary": ["halal"]
+}
 ```
 
-- Components only ever call `addFavorite(type, id)`, `removeFavorite(type, id)`,
-  `isFavorite(type, id)`, and `getFavorites()`.
-- `FavoriteButton` asks `isFavorite()` when it first renders, which is why
-  it still shows "♥ Saved" after a refresh.
-- The Favorites page looks ids up in the data files, so saved items always
-  show the latest data. Broken or missing storage falls back to an empty list.
+More bodies to try:
 
-## Images
+```json
+{ "mood": "sad", "preferences": [], "choice": "restaurant", "dietary": ["vegan", "no-seafood"] }
+```
+```json
+{ "surprise": true }
+```
+```json
+{ "preferences": ["comfort"] }
+```
+(The last one has no mood, so it should return **400** with an error.)
 
-Every food and restaurant has an `image` field (currently `null`). The
-`FoodImage` component shows the photo when there is one and falls back to
-the emoji if it's missing or fails to load. To add photos, put files in
-`public/images/` and set e.g. `image: '/images/ramen.jpg'`.
+| Field | Values |
+|---|---|
+| `mood` | `happy`, `tired`, `sad`, `stressed`, `excited`, `unsure` (required unless `surprise` is true) |
+| `preferences` | list: `spicy`, `sweet`, `healthy`, `comfort`, `fast`, `protein`, `vegetarian`, `asian`, `western`, `light`, `filling` |
+| `choice` | `cook`, `restaurant`, `either` |
+| `time` | max minutes (e.g. `30`), or `null` for no limit |
+| `budget` | `$`, `$$`, `$$$`, `any` |
+| `dietary` | list: `vegetarian`, `vegan`, `halal`, `no-seafood`, `dairy-free` |
 
-## What's next
+## How Recommendations Work
 
-- **Stage 3:** Python Flask backend + REST API; move foods, recipes, and
-  restaurants into a database (Users, Foods, Recipes, Restaurants, Favorites).
-- **Stage 4:** Registration/login, per-user favorites and history.
+`backend/services/recommendation_service.py`:
+
+1. **Filter.** Remove foods that break a dietary restriction, plus
+   restaurant-only foods (if cooking) or home-only foods (if eating out).
+2. **Score.** Mood +3, each matching craving +3, cook/restaurant fit +2,
+   time fit +2, budget fit +1, dietary fit +3.
+3. **Sort and return the top 3**, each with a `reason` sentence written by
+   `explanation_service.py`.
+
+## HTTP Status Codes Used
+
+| Code | Meaning | When MoodBite uses it |
+|---|---|---|
+| 200 OK | Success | Normal answers, including empty lists |
+| 201 Created | A new record was saved | Not used yet; saving favorites in Stage 4 will use it |
+| 400 Bad Request | The client sent something wrong | Missing mood, wrong data types, body isn't JSON |
+| 404 Not Found | That thing doesn't exist | Unknown food id, no recipe, unknown route |
+| 405 Method Not Allowed | Wrong HTTP method | e.g. GET on `/api/recommendations` |
+| 500 Internal Server Error | The server failed | MongoDB can't be reached, or a bug |
+
+## What's Next
+
+- **Stage 4:** Registration/login, per-user favorites saved in MongoDB.
 - **Stage 5:** Real restaurant data via an API such as Google Places, plus a map.
 - **Stage 6:** Free-text mood input ("I'm tired and only have $15") parsed
-  by an NLP model, feeding the same `getRecommendations()` input shape.
+  by an NLP model.
