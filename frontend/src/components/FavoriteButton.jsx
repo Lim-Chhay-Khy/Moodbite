@@ -7,8 +7,8 @@ import './FavoriteButton.css'
 
 // One button that saves / un-saves a food or restaurant for the
 // logged-in user, with a short message underneath.
-//   type: "food" | "restaurant"
-//   id:   the food or restaurant id
+//   type: "food" | "restaurant" (sample) | "place" (Google restaurant)
+//   id:   the food id, restaurant id, or Google place id
 export default function FavoriteButton({ type, id, label = 'Save' }) {
   const { isAuthenticated } = useAuth()
   const { findFavorite, saveFavorite, deleteFavorite } = useFavorites()

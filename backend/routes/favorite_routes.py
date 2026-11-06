@@ -1,18 +1,42 @@
+import re
 from datetime import datetime, timezone
 
 from flask import Blueprint, g, jsonify, request
 from pymongo.errors import DuplicateKeyError
 
 from database import db, to_object_id
-from models import favorite_to_dict
+from models import favorite_to_dict, food_to_dict, restaurant_to_dict
 from services.auth_service import login_required
+from services.places_service import PlacesError, get_place, is_configured
 
 favorite_routes = Blueprint("favorite_routes", __name__)
+
+# Google place ids look like "ChIJN1t_tDeuEmsRUsoyG83frY4".
+PLACE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{10,300}$")
 
 
 def is_whole_number(value):
     # bool is a kind of int in Python, so rule it out on purpose.
     return isinstance(value, int) and not isinstance(value, bool)
+
+
+def unavailable_place(place_id):
+    """Shown when we can't get a saved place's details from Google."""
+    return {
+        "id": place_id, "placeId": place_id, "source": "google", "unavailable": True,
+        "name": "Saved restaurant", "emoji": "🍽", "cuisine": "Restaurant",
+        "address": "Details are unavailable right now.", "location": None,
+        "googleMapsUrl": f"https://www.google.com/maps/place/?q=place_id:{place_id}",
+    }
+
+
+def load_place(place_id):
+    if not is_configured():
+        return unavailable_place(place_id)
+    try:
+        return get_place(place_id)
+    except PlacesError:
+        return unavailable_place(place_id)
 
 
 # GET /api/favorites  ->  the logged-in user's favorites, newest first
@@ -22,7 +46,7 @@ def get_favorites():
     # {"user_id": g.user["_id"]} is the important part: only THIS user's rows.
     favorites = list(db.favorites.find({"user_id": g.user["_id"]}).sort("created_at", -1))
 
-    # Load all the foods and restaurants they point to in two queries.
+    # Load the foods and sample restaurants they point to in two queries.
     # "$in" means "whose _id is in this list".
     food_ids = [f["food_id"] for f in favorites if f.get("food_id") is not None]
     restaurant_ids = [f["restaurant_id"] for f in favorites if f.get("restaurant_id") is not None]
@@ -31,29 +55,45 @@ def get_favorites():
 
     results = []
     for favorite in favorites:
-        food = foods.get(favorite.get("food_id"))
-        restaurant = restaurants.get(favorite.get("restaurant_id"))
-        if food or restaurant:  # skip favorites whose food/restaurant was removed
-            results.append(favorite_to_dict(favorite, food, restaurant))
+        if favorite.get("place_id"):  # a real Google restaurant
+            results.append(favorite_to_dict(favorite, restaurant=load_place(favorite["place_id"])))
+        elif favorite.get("food_id") in foods:
+            results.append(favorite_to_dict(favorite, food=food_to_dict(foods[favorite["food_id"]])))
+        elif favorite.get("restaurant_id") in restaurants:
+            restaurant = restaurant_to_dict(restaurants[favorite["restaurant_id"]])
+            results.append(favorite_to_dict(favorite, restaurant=restaurant))
+        # anything else points to data that was removed, so skip it
     return jsonify({"favorites": results})
 
 
+def read_favorite_target(data):
+    """Returns (food_id, restaurant_id, place_id, error). Exactly one of
+    the three must be given."""
+    food_id = data.get("food_id")
+    restaurant_id = data.get("restaurant_id")
+    place_id = data.get("place_id")
+
+    given = [value for value in (food_id, restaurant_id, place_id) if value is not None]
+    if len(given) != 1:
+        return None, None, None, "Send exactly one of food_id, restaurant_id or place_id."
+    if place_id is not None:
+        if not isinstance(place_id, str) or not PLACE_ID_PATTERN.match(place_id):
+            return None, None, None, "place_id doesn't look like a Google place id."
+    elif not is_whole_number(given[0]):
+        return None, None, None, "The id must be a whole number."
+    return food_id, restaurant_id, place_id, None
+
+
 # POST /api/favorites
-# Body: {"food_id": 4}  or  {"restaurant_id": 2}
+# Body: {"food_id": 4}  or  {"restaurant_id": 2}  or  {"place_id": "ChIJ..."}
 @favorite_routes.route("/api/favorites", methods=["POST"])
 @login_required
 def add_favorite():
-    data = request.get_json(silent=True) or {}
-    food_id = data.get("food_id")
-    restaurant_id = data.get("restaurant_id")
+    food_id, restaurant_id, place_id, error = read_favorite_target(request.get_json(silent=True) or {})
+    if error:
+        return jsonify({"error": error}), 400
 
-    # Exactly one of the two must be given, as a whole number.
-    if (food_id is None) == (restaurant_id is None):
-        return jsonify({"error": "Send either food_id or restaurant_id."}), 400
-    if not is_whole_number(food_id if food_id is not None else restaurant_id):
-        return jsonify({"error": "The id must be a whole number."}), 400
-
-    # Make sure the thing being saved really exists.
+    # Make sure our own foods / sample restaurants really exist.
     if food_id is not None and not db.foods.find_one({"_id": food_id}, {"_id": 1}):
         return jsonify({"error": "Food not found"}), 404
     if restaurant_id is not None and not db.restaurants.find_one({"_id": restaurant_id}, {"_id": 1}):
@@ -63,6 +103,7 @@ def add_favorite():
         "user_id": g.user["_id"],
         "food_id": food_id,
         "restaurant_id": restaurant_id,
+        "place_id": place_id,
         "created_at": datetime.now(timezone.utc),
     }
     try:

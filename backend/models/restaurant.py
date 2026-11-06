@@ -45,4 +45,12 @@ def restaurant_to_dict(restaurant):
         "dineIn": restaurant["dine_in"],
         "takeout": restaurant["takeout"],
         "delivery": restaurant["delivery"],
+        # Stage 5: same keys as a Google restaurant (services/places_service.py),
+        # so React's RestaurantCard can show either kind.
+        "source": "sample",
+        "placeId": None,
+        "ratingCount": None,
+        "openNow": None,
+        "location": None,
+        "googleMapsUrl": None,
     }

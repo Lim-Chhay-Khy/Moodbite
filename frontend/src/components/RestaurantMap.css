@@ -1,0 +1,47 @@
+.restaurant-map {
+  height: 380px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 10px 30px var(--color-card-shadow);
+  margin-bottom: 28px;
+  background: #e9e4dc; /* shown while the map loads */
+}
+
+.restaurant-map__note {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 28px;
+}
+
+/* Blue "you are here" dot */
+.restaurant-map__you {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #1a73e8;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.35);
+}
+
+.restaurant-map__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-body);
+  color: #2b2420;
+}
+
+.restaurant-map__info a {
+  color: #1a73e8;
+}
+
+@media (max-width: 560px) {
+  .restaurant-map {
+    height: 280px;
+  }
+}

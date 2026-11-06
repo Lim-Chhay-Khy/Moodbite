@@ -13,6 +13,7 @@ from routes.auth_routes import auth_routes
 from routes.favorite_routes import favorite_routes
 from routes.food_routes import food_routes
 from routes.history_routes import history_routes
+from routes.places_routes import places_routes
 from routes.profile_routes import profile_routes
 from routes.recommendation_routes import recommendation_routes
 from routes.restaurant_routes import restaurant_routes
@@ -47,6 +48,7 @@ app.register_blueprint(auth_routes)  # Stage 4
 app.register_blueprint(favorite_routes)  # Stage 4
 app.register_blueprint(history_routes)  # Stage 4
 app.register_blueprint(profile_routes)  # Stage 4
+app.register_blueprint(places_routes)  # Stage 5
 
 # Make sure the indexes exist (unique emails, no duplicate favorites).
 # If MongoDB can't be reached yet, start anyway — the database error

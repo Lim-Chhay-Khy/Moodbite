@@ -118,6 +118,34 @@ export function getRestaurants(id) {
   return request(`/foods/${id}/restaurants`)
 }
 
+// Google charges for every search, so if the SAME search is already on its
+// way (React's development mode starts every page's effects twice), share
+// that one request instead of sending a second, identical one.
+const searchesInProgress = new Map() // path -> Promise
+
+function requestOnce(path) {
+  if (!searchesInProgress.has(path)) {
+    const promise = request(path).finally(() => searchesInProgress.delete(path))
+    searchesInProgress.set(path, promise)
+  }
+  return searchesInProgress.get(path)
+}
+
+// GET /api/foods/:id/nearby  ->  { food, source, message, center, restaurants }
+// Stage 5: real restaurants from Google Places (through Flask).
+//   search = { lat, lng }  near the user, or  { near: 'Toronto' }  in a city
+// source is "google", or "sample" if Google isn't set up or can't be reached.
+export function getNearbyRestaurants(foodId, search = {}) {
+  const params = new URLSearchParams()
+  if (search.lat !== undefined && search.lng !== undefined) {
+    params.set('lat', search.lat)
+    params.set('lng', search.lng)
+  }
+  if (search.near) params.set('near', search.near)
+  const query = params.toString()
+  return requestOnce(`/foods/${foodId}/nearby${query ? `?${query}` : ''}`)
+}
+
 // GET /api/restaurants  ->  [restaurant, ...]
 export async function getAllRestaurants() {
   const data = await request('/restaurants')
@@ -185,9 +213,12 @@ export async function getFavorites() {
 }
 
 // POST /api/favorites  ->  { message, favorite }
-// Pass { foodId } OR { restaurantId }.
-export function addFavorite({ foodId, restaurantId }) {
-  const body = foodId !== undefined ? { food_id: foodId } : { restaurant_id: restaurantId }
+// Pass ONE of: { foodId }, { restaurantId } (sample), { placeId } (Google).
+export function addFavorite({ foodId, restaurantId, placeId }) {
+  let body
+  if (foodId !== undefined) body = { food_id: foodId }
+  else if (placeId !== undefined) body = { place_id: placeId }
+  else body = { restaurant_id: restaurantId }
   return request('/favorites', { method: 'POST', body })
 }
 

@@ -14,7 +14,7 @@ import {
 // Now they're saved in MongoDB under the user's id, so they follow the
 // user to any device.
 //
-//   type is "food" or "restaurant"
+//   type is "food", "restaurant" (sample) or "place" (Google, Stage 5)
 // ---------------------------------------------------------------------
 const FavoritesContext = createContext(null)
 
@@ -47,15 +47,24 @@ export function FavoritesProvider({ children }) {
 
   // Returns the saved favorite for this food/restaurant, or undefined.
   function findFavorite(type, id) {
-    return favorites.find((favorite) =>
-      type === 'food' ? favorite.foodId === id : favorite.restaurantId === id,
-    )
+    return favorites.find((favorite) => {
+      if (type === 'food') return favorite.foodId === id
+      if (type === 'place') return favorite.placeId === id
+      return favorite.restaurantId === id
+    })
+  }
+
+  // Which field the API expects for each type.
+  function favoriteBody(type, id) {
+    if (type === 'food') return { foodId: id }
+    if (type === 'place') return { placeId: id }
+    return { restaurantId: id }
   }
 
   // Returns the server's message ("Saved to Favorites!") or throws.
   async function saveFavorite(type, id) {
     try {
-      const data = await apiAddFavorite(type === 'food' ? { foodId: id } : { restaurantId: id })
+      const data = await apiAddFavorite(favoriteBody(type, id))
       return data.message
     } finally {
       await loadFavorites() // refresh the list, even after "Already in Favorites."

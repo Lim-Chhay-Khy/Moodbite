@@ -46,7 +46,10 @@ export default function Favorites() {
   }
 
   const foodFavorites = favorites.filter((favorite) => favorite.type === 'food')
-  const restaurantFavorites = favorites.filter((favorite) => favorite.type === 'restaurant')
+  // Sample restaurants and real Google restaurants ("place") share a section.
+  const restaurantFavorites = favorites.filter(
+    (favorite) => favorite.type === 'restaurant' || favorite.type === 'place',
+  )
 
   if (favorites.length === 0) {
     return (

@@ -48,8 +48,12 @@ def create_indexes():
     so this is safe to run every time the app starts."""
     db.restaurants.create_index("food_ids")
     db.users.create_index("email", unique=True)  # no two accounts with one email
+    # Stage 5 added place_id, so the old 3-field index is replaced.
+    if "user_id_1_food_id_1_restaurant_id_1" in db.favorites.index_information():
+        db.favorites.drop_index("user_id_1_food_id_1_restaurant_id_1")
     db.favorites.create_index(
-        [("user_id", ASCENDING), ("food_id", ASCENDING), ("restaurant_id", ASCENDING)],
+        [("user_id", ASCENDING), ("food_id", ASCENDING),
+         ("restaurant_id", ASCENDING), ("place_id", ASCENDING)],
         unique=True,  # a user can't save the same food or restaurant twice
     )
     db.history.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])

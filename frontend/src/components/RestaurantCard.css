@@ -57,3 +57,37 @@
   background: #f3eee6;
   text-decoration: line-through;
 }
+
+/* ----- Stage 5 ----- */
+.restaurant-card__number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  vertical-align: 2px;
+}
+
+.restaurant-card__count {
+  font-weight: 500;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.restaurant-card__details .is-closed {
+  color: #b03a2e;
+}
+
+/* The Google Maps link uses the button look. */
+.card__actions a.btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}

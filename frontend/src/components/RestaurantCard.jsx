@@ -10,46 +10,81 @@ const SERVICES = [
   { key: 'delivery', label: 'Delivery' },
 ]
 
-// One restaurant object from the Flask API.
+// "Open now" / "Closed now" for Google restaurants, or the hours text for samples.
+function hoursText(restaurant) {
+  if (restaurant.openNow === true) return 'Open now'
+  if (restaurant.openNow === false) return 'Closed now'
+  return restaurant.openingHours
+}
+
+// One restaurant from the Flask API: a sample one, or a real one from
+// Google (source: "google"). Both come in the same shape, but Google may
+// not know every detail, so anything missing (null) is simply not shown.
+//   number:   optional — matches the pin number on the map
 //   onRemove: optional — shows "Remove Favorite" when given
-export default function RestaurantCard({ restaurant, onRemove }) {
+export default function RestaurantCard({ restaurant, number, onRemove }) {
+  const isGoogle = Boolean(restaurant.placeId)
+  const subtitle = [
+    restaurant.cuisine,
+    restaurant.priceLevel,
+    restaurant.distance != null ? `${restaurant.distance} km away` : null,
+  ].filter(Boolean)
+  const services = SERVICES.filter((service) => typeof restaurant[service.key] === 'boolean')
+  const hours = hoursText(restaurant)
+
   return (
     <article className="card restaurant-card">
       <FoodImage src={restaurant.imageUrl} emoji={restaurant.emoji} alt={restaurant.name} />
       <div className="card__body">
         <div className="restaurant-card__top">
-          <h3 className="restaurant-card__name">{restaurant.name}</h3>
-          <span className="restaurant-card__rating" aria-label={`Rated ${restaurant.rating} out of 5`}>
-            ★ {restaurant.rating}
-          </span>
+          <h3 className="restaurant-card__name">
+            {number && <span className="restaurant-card__number">{number}</span>}
+            {restaurant.name}
+          </h3>
+          {restaurant.rating != null && (
+            <span className="restaurant-card__rating" aria-label={`Rated ${restaurant.rating} out of 5`}>
+              ★ {restaurant.rating}
+              {restaurant.ratingCount != null && (
+                <span className="restaurant-card__count"> ({restaurant.ratingCount.toLocaleString()})</span>
+              )}
+            </span>
+          )}
         </div>
-        <p className="restaurant-card__subtitle">
-          {restaurant.cuisine} · {restaurant.priceLevel} · {restaurant.distance} km away
-        </p>
+        {subtitle.length > 0 && <p className="restaurant-card__subtitle">{subtitle.join(' · ')}</p>}
 
         <ul className="restaurant-card__details">
-          <li>📍 {restaurant.address}</li>
-          <li>🕒 {restaurant.openingHours}</li>
+          {restaurant.address && <li>📍 {restaurant.address}</li>}
+          {hours && (
+            <li className={restaurant.openNow === false ? 'is-closed' : undefined}>🕒 {hours}</li>
+          )}
         </ul>
 
-        <ul className="restaurant-card__services">
-          {SERVICES.map((service) => (
-            <li
-              key={service.key}
-              className={restaurant[service.key] ? 'is-available' : 'is-unavailable'}
-            >
-              {restaurant[service.key] ? '✓' : '✕'} {service.label}
-            </li>
-          ))}
-        </ul>
+        {services.length > 0 && (
+          <ul className="restaurant-card__services">
+            {services.map((service) => (
+              <li key={service.key} className={restaurant[service.key] ? 'is-available' : 'is-unavailable'}>
+                {restaurant[service.key] ? '✓' : '✕'} {service.label}
+              </li>
+            ))}
+          </ul>
+        )}
 
         <div className="card__actions">
+          {restaurant.googleMapsUrl && (
+            <a className="btn btn--secondary" href={restaurant.googleMapsUrl} target="_blank" rel="noopener noreferrer">
+              View on Google Maps
+            </a>
+          )}
           {onRemove ? (
             <Button variant="outline" onClick={onRemove}>
               Remove Favorite
             </Button>
           ) : (
-            <FavoriteButton type="restaurant" id={restaurant.id} label="Save Favorite" />
+            <FavoriteButton
+              type={isGoogle ? 'place' : 'restaurant'}
+              id={isGoogle ? restaurant.placeId : restaurant.id}
+              label="Save Favorite"
+            />
           )}
         </div>
       </div>

@@ -26,7 +26,7 @@ export default function About() {
         <h2>What you can do</h2>
         <ul>
           <li>Open a step-by-step recipe for any dish you can cook at home.</li>
-          <li>See sample restaurants that serve a dish.</li>
+          <li>Find real restaurants near you on a map.</li>
           <li>Create an account to save foods and restaurants to your Favorites.</li>
           <li>See your past recommendation sessions in your History.</li>
         </ul>
@@ -35,7 +35,7 @@ export default function About() {
       <section>
         <h2>Coming next</h2>
         <p>
-          Real restaurant data with a map, and a free-text mood input.
+          A free-text mood input, like “I’m tired and only have $15”.
         </p>
       </section>
 

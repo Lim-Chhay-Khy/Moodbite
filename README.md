@@ -11,6 +11,7 @@ and it recommends three meals and explains why.
 - Python
 - Flask (+ Flask-CORS)
 - JWT login tokens (PyJWT) + Werkzeug password hashing
+- Google Places API (New) + Maps JavaScript API (`@vis.gl/react-google-maps`)
 - MongoDB (with PyMongo)
 - REST API (JSON)
 
@@ -22,7 +23,8 @@ and it recommends three meals and explains why.
 - Time filtering
 - Dietary filtering (vegetarian, vegan, halal, no seafood, dairy-free)
 - Recipe instructions
-- Restaurant suggestions (sample data)
+- Real nearby restaurants from Google Places, shown on a Google map
+  (uses your location, or a city you type; falls back to sample data)
 - User accounts: register, log in, log out
 - Favorites saved to each user's account
 - Recommendation history per user, with "View Again"
@@ -33,6 +35,8 @@ and it recommends three meals and explains why.
 
 ```
 React (localhost:5173)  →  Flask REST API (localhost:5000)  →  MongoDB (Atlas or local)
+        │                               └──────────────→  Google Places API
+        └── Google Maps JavaScript API (the map itself)
        frontend/                      backend/                  moodbite database
 ```
 
@@ -147,6 +151,63 @@ Check it works: open http://localhost:5000/api/foods in your browser.
 To see the data: in Atlas, open **Database → Browse Collections**; or open
 **MongoDB Compass**, paste your `MONGODB_URI`, and open the `moodbite` database.
 
+## Google Setup (Stage 5, optional)
+
+Without Google keys the app still works and shows the sample restaurants.
+To show **real** restaurants and a map:
+
+1. Go to **console.cloud.google.com**, sign in, and create a project
+   (e.g. "MoodBite").
+2. Turn on **billing** for the project. Google needs a card, but each
+   product has a free monthly amount (see the costs table below), which is
+   plenty for testing.
+   - **Set a safety limit:** Billing → **Budgets & alerts** → create a
+     budget of e.g. $1 so Google emails you before you spend anything.
+3. **APIs & Services → Library**: enable **Places API (New)** and
+   **Maps JavaScript API**.
+4. **APIs & Services → Credentials → Create credentials → API key**. Make
+   **two** keys:
+
+   | Key | API restriction | Application restriction | Put it in |
+   |---|---|---|---|
+   | Server key | Places API (New) | None (or your server's IP) | `backend/.env` → `GOOGLE_PLACES_API_KEY=...` |
+   | Browser key | Maps JavaScript API | Websites: `http://localhost:5173/*` | `frontend/.env` → `VITE_GOOGLE_MAPS_API_KEY=...` |
+
+   Why two? The **server key** stays secret inside Flask. The **browser
+   key** is always visible to anyone who opens the page (that's how map
+   keys work), so it's locked to your website's address and to maps only.
+5. Create `frontend/.env` (copy `frontend/.env.example`) for the browser key.
+6. **Restart** both servers. Flask and Vite only read `.env` when they start.
+7. Optional: **APIs & Services → Places API (New) → Quotas**, and set a low
+   daily limit (e.g. 100 requests per day).
+
+### Costs (Google's price list, November 2026)
+
+| What MoodBite uses | Free each month | After that |
+|---|---|---|
+| Text Search Enterprise + Atmosphere (restaurant search) | 1,000 searches | $40 per 1,000 |
+| Place Details Enterprise + Atmosphere (saved Google restaurants) | 1,000 | per Google's price list |
+| Dynamic Maps (the map) | 10,000 map loads | $7 per 1,000 |
+
+The search asks for ratings, price, open-now and dine-in/takeout/delivery,
+which puts it in the "Enterprise + Atmosphere" tier. To pay less, remove
+fields from `FIELDS` in `backend/services/places_service.py`.
+
+### How it works
+
+1. The restaurant page asks the browser for your location (or you type a city).
+2. React calls `GET /api/foods/<id>/nearby?lat=..&lng=..` (or `?near=Toronto`).
+3. Flask calls Google's **Text Search** ("Chicken Fried Rice restaurant"
+   near you) with the server key, works out each distance, and sends back
+   restaurants in the same shape as the sample ones.
+4. React shows them as numbered cards plus numbered pins on the map.
+5. If there's no key, no location, or Google fails, Flask sends the sample
+   restaurants with a message instead of an error.
+
+Saving a Google restaurant stores **only its `place_id`**. Google's terms
+don't let apps keep other place details, so the Favorites page asks Google
+for the current details each time.
+
 ## Running the Backend (after the first setup)
 
 ```bash
@@ -178,7 +239,7 @@ in the comments of `backend/models/`.
 | `foods` | One dish + recommendation data (`moods`, `preferences`, `dietary_tags` lists) **and its recipe embedded inside** (`recipe`, or `null` if restaurant-only) | Food → Recipe is one-to-one, so the recipe lives *inside* the food document |
 | `restaurants` | One sample restaurant + a `food_ids` list, e.g. `[1, 14, 19]` | Restaurant ↔ Food is many-to-many: `find({"food_ids": 1})` finds every restaurant serving food 1 |
 | `users` | `name`, `email` (unique), `password_hash` (never the password), `created_at` | — |
-| `favorites` | `user_id`, `food_id` **or** `restaurant_id`, `created_at` | User → Favorites is one-to-many; each favorite also points to one food or restaurant |
+| `favorites` | `user_id`, plus `food_id` **or** `restaurant_id` **or** `place_id` (Google), `created_at` | User → Favorites is one-to-many; each favorite also points to one food or restaurant |
 | `history` | `user_id`, the answers (`mood`, `preferences`, `choice`, `time`, `budget`, `dietary`), a copy of `recommended_foods`, `created_at` | User → History is one-to-many |
 
 ```
@@ -209,6 +270,8 @@ twice when two identical requests arrive at the same moment.
 | GET | `/api/restaurants` | `{"restaurants": [...]}` | 500 |
 | POST | `/api/recommendations` | `{"recommendations": [...], "savedToHistory": true/false}` (top 3) | 400 bad request |
 
+| GET | `/api/foods/<id>/nearby?lat=&lng=` or `?near=` | `{"food", "source": "google"/"sample", "message", "center", "restaurants"}` | 400 bad location, 404 food |
+
 **Stage 4 routes.** 🔒 = needs `Authorization: Bearer <token>`, otherwise
 **401** `{"error": "Authentication required"}`.
 
@@ -220,7 +283,7 @@ twice when two identical requests arrive at the same moment.
 | GET 🔒 | `/api/profile` | — | `{"user", "favoritesCount", "historyCount"}` | 401 |
 | PUT 🔒 | `/api/profile` | `{"name", "email"}` | same as GET | 400, 409 email taken |
 | GET 🔒 | `/api/favorites` | — | `{"favorites": [...]}` newest first | 401 |
-| POST 🔒 | `/api/favorites` | `{"food_id": 4}` or `{"restaurant_id": 2}` | 201 `{"message": "Saved to Favorites!", "favorite"}` | 400, 404, 409 `Already in Favorites.` |
+| POST 🔒 | `/api/favorites` | `{"food_id": 4}`, `{"restaurant_id": 2}` or `{"place_id": "ChIJ..."}` | 201 `{"message": "Saved to Favorites!", "favorite"}` | 400, 404, 409 `Already in Favorites.` |
 | DELETE 🔒 | `/api/favorites/<id>` | — | `{"message": "Removed from Favorites."}` | 404 (also if it's someone else's) |
 | GET 🔒 | `/api/history` | — | `{"history": [...]}` newest first (max 50) | 401 |
 | DELETE 🔒 | `/api/history/<id>` | — | `{"message"}` | 404 |
@@ -323,6 +386,5 @@ More bodies to try:
 
 ## What's Next
 
-- **Stage 5:** Real restaurant data via an API such as Google Places, plus a map.
 - **Stage 6:** Free-text mood input ("I'm tired and only have $15") parsed
   by an NLP model.

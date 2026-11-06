@@ -38,3 +38,10 @@ class Config:
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "").strip()
     # How long a login lasts before the user must log in again.
     JWT_EXPIRES_DAYS = int(os.getenv("JWT_EXPIRES_DAYS", "7"))
+
+    # ----- Stage 5: real restaurants (Google Places API) -----
+    # A SERVER key: only Flask uses it, so it never reaches the browser.
+    # Leave it empty to keep using the sample restaurants.
+    GOOGLE_PLACES_API_KEY = os.getenv("GOOGLE_PLACES_API_KEY", "").strip()
+    # How far around the user to look, in metres (5000 = 5 km).
+    PLACES_SEARCH_RADIUS_M = int(os.getenv("PLACES_SEARCH_RADIUS_M", "5000"))

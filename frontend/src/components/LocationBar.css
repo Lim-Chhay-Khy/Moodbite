@@ -1,0 +1,51 @@
+.location-bar {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.location-bar__status {
+  font-weight: 600;
+}
+
+.location-bar__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The label is for screen readers; the placeholder shows the hint. */
+.location-bar__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.location-bar__form input {
+  flex: 1 1 220px;
+  min-width: 0;
+  font: inherit;
+  padding: 10px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.location-bar__form input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.location-bar__form .btn {
+  padding: 10px 18px;
+  font-size: 0.88rem;
+}
